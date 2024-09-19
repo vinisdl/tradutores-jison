@@ -1,7 +1,8 @@
 /* Autores: Marco Vinícius, Matheus Milanezi.
 /* Descrição: Lexer e Parser com tabela de símbolos para rastrear identificadores e palavras reservadas */
-
 /* JavaScript section to track symbols */
+
+
 %{
     let symbolTable = {};  // Tabela de símbolos para armazenar os identificadores
     let idCounter = 1;     // Contador que cria índices únicos para os identificadores
@@ -33,7 +34,7 @@
 
 [0-9]+\.[0-9]+             return 'DOUBLE'; // Números de ponto flutuante (double)
 
-[0-9]{1,8}                 return 'INTEIRO'; // Números inteiros até 8 dígitos
+[0-9]{1,8}                 return 'INTEIRO'; // Números inteiros até 32 dígitos
 
 \/\/[^\n]*                  return 'COMENTARIO';  // Comentário no estilo JS (//)
 
