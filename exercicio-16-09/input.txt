@@ -1,0 +1,17 @@
+abc123
+abc123
+double
+if
+else
+variavel
+aaaabbbb
+12345678
+100000
+12.34
+1234.56
+1.234
+333342.123123
+int
+// Este é um comentário
+OutraVariavel
+MaisUma
