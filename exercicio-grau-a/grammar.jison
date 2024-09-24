@@ -8,9 +8,8 @@
 
 %%
 // Definição de tokens
-"print"|"printf"          { return 'FUNCTION'; }
-"\""                      { return 'STRING_START'; }
-"\\\"?"[^\"\n]*"\""      { return 'STRING'; }
+"printf"          { return 'FUNCTION'; }
+"([^"]*)"      { return 'STRING'; }
 "%"                       { return 'PERCENT'; }
 "\\d+"                   { return 'NUMBER'; }
 "nro"                     { return 'IDENTIFIER'; }
@@ -48,10 +47,6 @@ statement
   : FUNCTION LPAREN args RPAREN ';'
   ;
 
-token
-    : LPAREN {}
-    | RPAREN {}
-    ;
 
 args
   : STRING
