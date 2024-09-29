@@ -1,64 +1,49 @@
-
-
 %lex
 
-%x string
+%x paren
 
 %%
-\\s+              /* skip */;   // Ignorar espaços em branco
-[\(]              return "(";      // Parêntese esquerdo
-[\)]              return ")";      // Parêntese direito
-["]               this.pushState("string");
-<string>[^"]*   return "STRING";
-<string>["]       this.popState();
-"printf"           return 'PRINTF';  // Comando printf
 
-[a-zA-Z_][a-zA-Z0-9_]* return 'VAR'; // Variável
-[0-9]+           return 'NUMBER';  // Número
-"+"              return 'OPERATOR'; // Operador +
-"-"                return 'OPERATOR'; // Operador -
-"*"              return 'OPERATOR'; // Operador *
-"/"                return 'OPERATOR'; // Operador /
-;                return ";";      // Ponto e vírgula
-return             return "return"; // Palavra-chave return
-<<EOF>>                     return 'EOF';  // Fim do arquivo
-.                           return 'ERRO_LEXICO';  // Qualquer outro símbolo é erro
+\s+                   /* skip whitespace */
+<INITIAL>"("         { this.begin("paren"); parenCount = 1; return "parenStart"; };
+<paren>"("            { console.log("parenStart", parenCount); parenCount++; return "parenInterior"; };
+<paren>")"            { console.log("parenEnd", parenCount); parenCount--; if (parenCount === 0) { this.popState(); return "parenEnd"; } else { return "parenInterior"; } };
+<paren>[^\)\(]+       { console.log(this); return "parenInterior"; };
+[";"]                 return 'DOTCOMMA'
+"printf"           return 'PRINTF';  // Comando printf
+<<EOF>>               return 'EOF';
+.                     return 'PARAM';
 
 /lex
 
-%start program
-%token PRINTF STRING NUMBER OPERATOR
+%start expressions
 
-%% 
+%% /* language grammar */
 
-program
-    : statement_list
+expressions
+    : PRINTF parenStart parenInteriorSeq parenEnd DOTCOMMA EOF { return $1 + $2 + $3 + $4 + $5; }
     ;
 
-statement_list
-    : statement_list statement
-    | statement
+parenInteriorSeq
+    : parenInterior 
+    | parenInteriorSeq parenInterior -> $1.concat($2)
     ;
 
-statement
-    : PRINTF '(' expression ')' ';'    { console.log($3); }
+PARAMSeq
+    : -> ""      // Empty sequence.
+    | PARAMs  // One or more PARAM tokens.
     ;
 
-expression
-    : STRING                            { $$ = $1; }
-    | arithmetic_expression             { $$ = $1; }
-    | function_return                   { $$ = $1; }
+PARAMs
+    : PARAM
+    | PARAMSeq PARAM -> $1.concat($2)
     ;
 
-arithmetic_expression
-    : term (OPERATOR term)*            { 
-        $$ = $1; 
-        for (let i = 0; i < $2.length; i++) {
-            $$ = eval($$ + $2[i][0] + $2[i][1]); // Calcula a operação
-        }
-    }
+DOTCOMMAs
+    : DOTCOMMA
+    | DOTCOMMAs DOTCOMMA -> $1.concat($2)
     ;
 
-term
-    : NUMBER                            { $$ = $1; }
-    ;
+%%
+
+parenCount = 0;

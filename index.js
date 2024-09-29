@@ -11,7 +11,9 @@ var parser = new jison.Parser(bnf);
 // Ler o arquivo de entrada
 var input = fs.readFileSync(`${pasta}/input.txt`, "utf8");
 
+var inp = `printf("Olá mundo");`;
+
 // Chama o parser para processar a entrada
-parser.parse(input);
+parser.parse(inp);
 
 
