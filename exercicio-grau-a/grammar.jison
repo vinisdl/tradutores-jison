@@ -1,49 +1,114 @@
 %lex
+DDS [0-9]
+NZD [1-9]
+DSI [-+]?{DDS}
+DEI [eE]
+DEP {DEI}{DSI}
+DIL [0]|({NZD}{DDS}*)
+decimalnumber (({DIL}\.{DDS}*{DEP}?)|(\.{DDS}{DEP}?)|({DIL}{DEP}?))
+imaginarydecimalnumber {decimalnumber}[i]
+escapechar [\'\"\\bfnrtv]
+escape \\{escapechar}
+acceptedcharssingle [^\'\\]+
+acceptedcharsdouble [^\"\\]+
+stringsingle {escape}|{acceptedcharssingle}
+stringdouble {escape}|{acceptedcharsdouble}
+stringliteral (\'{stringsingle}*\')|(\"{stringdouble}*\")
 
-%x paren
-
+%options flex
 %%
-
 \s+                   /* skip whitespace */
-<INITIAL>"("         { this.begin("paren"); parenCount = 1; return "parenStart"; };
-<paren>"("            { console.log("parenStart", parenCount); parenCount++; return "parenInterior"; };
-<paren>")"            { console.log("parenEnd", parenCount); parenCount--; if (parenCount === 0) { this.popState(); return "parenEnd"; } else { return "parenInterior"; } };
-<paren>[^\)\(]+       { console.log(this); return "parenInterior"; };
-[";"]                 return 'DOTCOMMA'
-"printf"           return 'PRINTF';  // Comando printf
-<<EOF>>               return 'EOF';
-.                     return 'PARAM';
 
+"/*"(.|\n|\r)*?"*/" /* ignore multiline comment. No single line comment, sorry */
+
+{stringliteral}                  return 'STRING_LITERAL'
+[a-zA-Z_$@][a-zA-Z0-9_]*	    return 'IDENTIFIER'
+{decimalnumber}                 return 'NUMBER_LITERAL'
+
+"*"      return '*'
+"/"      return '/'
+"-"      return '-'
+"+"      return '+'
+"("      return '('
+")"      return ')'
+";"      return ';'
+","      return ','
+<<EOF>>               return 'EOF'
+.        return 'INVALID'
 /lex
 
-%start expressions
+%token STRINGLITERAL NUMBERLITERAL IMAGINARYLITERAL
 
-%% /* language grammar */
 
-expressions
-    : PRINTF parenStart parenInteriorSeq parenEnd DOTCOMMA EOF { return $1 + $2 + $3 + $4 + $5; }
+%token 
+%start function_call
+%%
+
+primary_expression
+    : IDENTIFIER
+    | literal         /* numeros, strings */
+    | "(" expression ")"
     ;
 
-parenInteriorSeq
-    : parenInterior 
-    | parenInteriorSeq parenInterior -> $1.concat($2)
+function_call  
+    : IDENTIFIER arguments ";" EOF
     ;
 
-PARAMSeq
-    : -> ""      // Empty sequence.
-    | PARAMs  // One or more PARAM tokens.
+arguments
+    : "(" ")"
+    | "(" argument_list ")"
     ;
 
-PARAMs
-    : PARAM
-    | PARAMSeq PARAM -> $1.concat($2)
+argument_list
+    : assignment_expression
+    | argument_list "," assignment_expression
     ;
 
-DOTCOMMAs
-    : DOTCOMMA
-    | DOTCOMMAs DOTCOMMA -> $1.concat($2)
+left_hand_side_expression
+    : primary_expression
+    | function_call
+    | array_call
+    ; 
+
+unary_expression
+    : left_hand_side_expression 
+    | "+" unary_expression    
+    | "-" unary_expression    
+    ;
+
+multiplicative_expression
+    : unary_expression    
+    | multiplicative_expression '*' multiplicative_expression    
+    | multiplicative_expression '/' multiplicative_expression    
+    ;
+
+additive_expression
+    : multiplicative_expression    
+    | additive_expression "+" multiplicative_expression
+    | additive_expression "-" multiplicative_expression
+    ;
+
+assignment_expression
+    : additive_expression
+    ;
+
+expression
+    : additive_expression
+    | expression "," additive_expression
+    ;
+
+literal
+    : numeric_literal 
+    | string_literal
+    ;
+
+numeric_literal
+    : NUMBER_LITERAL
+    | IMAGINARY_LITERAL
+    ;
+
+string_literal
+    : STRING_LITERAL
     ;
 
 %%
-
-parenCount = 0;
