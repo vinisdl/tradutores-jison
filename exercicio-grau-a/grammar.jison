@@ -60,7 +60,8 @@ arguments
     ;
 
 argument_list
-    : assignment_expression
+    : argument_list "," IDENTIFIER arguments
+    | assignment_expression
     | argument_list "," assignment_expression
     ;
 
